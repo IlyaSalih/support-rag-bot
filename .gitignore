@@ -1,0 +1,23 @@
+# Секреты
+.env
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Данные бота: векторная база и журнал диалогов
+data/
+logs/
+
+# Результаты прогона тестового набора
+eval/results/
+
+# Редакторы и система
+.vscode/
+.idea/
+.DS_Store
+
+# Архивы
+*.zip

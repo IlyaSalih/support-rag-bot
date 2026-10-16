@@ -1,0 +1,7 @@
+gigachat
+chromadb
+fastembed
+aiogram
+python-dotenv
+pyyaml
+pytest
