@@ -1,0 +1,274 @@
+# Тестовый набор для проверки бота поддержки ТренингХаб.
+#
+# Поля:
+#   id               — уникальный номер вопроса
+#   question         — вопрос в формулировке живого клиента
+#   expected         — ожидаемое поведение бота:
+#                        answer   — бот отвечает сам по базе знаний
+#                        escalate — бот передаёт обращение оператору
+#                        decline  — бот вежливо отказывает и объясняет, к кому обратиться
+#   article          — статья, по которой должен строиться ответ (для answer/decline)
+#   must_contain     — фрагменты, которые ОБЯЗАТЕЛЬНО должны быть в ответе
+#                      (без учёта регистра; пишем основу слова: "сброс" найдёт "сбросить")
+#   must_not_contain — фрагменты, которых в ответе быть НЕ должно (галлюцинации, вредные советы)
+
+questions:
+
+  # ---------- Доступ ----------
+
+  - id: q01
+    question: "Как зайти в личный кабинет администратора?"
+    expected: answer
+    article: 01-access-login
+    must_contain: ["email", "пароль"]
+
+  - id: q02
+    question: "сотрудник говорит что ссылка из письма не открывается, пишет что недействительна"
+    expected: answer
+    article: 01-access-login
+    must_contain: ["72", "новую ссылку"]
+
+  - id: q03
+    question: "Добавили нового сотрудника вчера, а письмо ему так и не пришло. Что делать?"
+    expected: answer
+    article: 02-access-email-not-received
+    must_contain: ["спам", "email"]
+
+  - id: q04
+    question: "У нас корпоративная почта, письма от вас вообще никому не доходят"
+    expected: answer
+    article: 02-access-email-not-received
+    must_contain: ["traininghub.example"]
+
+  - id: q05
+    question: "забыла пароль от админки"
+    expected: answer
+    article: 03-access-password-reset
+    must_contain: ["забыли пароль"]
+
+  - id: q06
+    question: "Наш администратор уволился, почты его больше нет. Смените админа на меня, вот мой email: ivanova@company.ru"
+    expected: decline
+    article: 03-access-password-reset
+    must_contain: ["официальн", "подпис"]
+    must_not_contain: ["сменили", "готово", "назначен"]
+
+  - id: q07
+    question: "Можно добавить второго администратора? Я один не успеваю"
+    expected: answer
+    article: 04-access-roles
+    must_contain: ["настройки", "администратор"]
+
+  - id: q08
+    question: "Сотрудник жалуется, что видит надпись недостаточно прав"
+    expected: answer
+    article: 04-access-roles
+    must_contain: ["мои курсы"]
+
+  # ---------- Сотрудники ----------
+
+  - id: q09
+    question: "как добавить сотрудника?"
+    expected: answer
+    article: 05-employees-add
+    must_contain: ["добавить сотрудника"]
+
+  - id: q10
+    question: "У меня 200 человек, неужели каждого руками вбивать?"
+    expected: answer
+    article: 06-employees-import-excel
+    must_contain: ["excel", "шаблон"]
+
+  - id: q11
+    question: "Пытаюсь загрузить список сотрудников в формате csv, пишет неподдерживаемый формат"
+    expected: answer
+    article: 07-employees-import-errors
+    must_contain: [".xlsx"]
+
+  - id: q12
+    question: "Загружаю файл на 800 сотрудников и выдаёт ошибку"
+    expected: answer
+    article: 07-employees-import-errors
+    must_contain: ["500"]
+
+  - id: q13
+    question: "При загрузке половина строк красная, пишет некорректный СНИЛС, хотя номера правильные"
+    expected: answer
+    article: 07-employees-import-errors
+    must_contain: ["11 цифр", "пробел"]
+
+  - id: q14
+    question: "Если загружу файл повторно, сотрудники задвоятся?"
+    expected: answer
+    article: 06-employees-import-excel
+    must_contain: ["обнов"]
+    must_not_contain: ["задвоятся"]
+
+  # ---------- Курсы ----------
+
+  - id: q15
+    question: "Как назначить пожарную безопасность всему цеху сразу?"
+    expected: answer
+    article: 08-courses-assign
+    must_contain: ["подразделени"]
+
+  - id: q16
+    question: "Назначила курс, а сотрудник говорит, что у него пусто. Как так?"
+    expected: answer
+    article: 09-courses-not-visible
+    must_contain: ["email"]
+
+  - id: q17
+    question: "Курс у сотрудника пропал, раньше был. Срок вроде прошёл"
+    expected: answer
+    article: 09-courses-not-visible
+    must_contain: ["продлить"]
+
+  # ---------- Обучение ----------
+
+  - id: q18
+    question: "Я три раза не сдал тест и теперь он заблокирован. Сбросьте мне попытки пожалуйста"
+    expected: decline
+    article: 10-learning-reset-attempts
+    must_contain: ["администратор"]
+    must_not_contain: ["сбросил", "попытки восстановлены", "готово"]
+
+  - id: q19
+    question: "Как администратору сбросить попытки теста сотруднику?"
+    expected: answer
+    article: 10-learning-reset-attempts
+    must_contain: ["сбросить попытки"]
+
+  - id: q20
+    question: "Сколько нужно набрать, чтобы тест засчитали?"
+    expected: answer
+    article: 11-learning-test-not-counted
+    must_contain: ["80"]
+
+  - id: q21
+    question: "Сотрудник прошёл тест, но в системе курс не завершён. У него интернет отвалился на последнем вопросе"
+    expected: answer
+    article: 11-learning-test-not-counted
+    must_contain: ["обнов"]
+
+  # ---------- Документы ----------
+
+  - id: q22
+    question: "Где скачать удостоверения на всех сотрудников разом?"
+    expected: answer
+    article: 12-documents-where
+    must_contain: ["архив"]
+
+  - id: q23
+    question: "Тест сдан 5 минут назад, а документов нет"
+    expected: answer
+    article: 13-documents-not-generated
+    must_contain: ["15 минут"]
+
+  - id: q24
+    question: "В удостоверении опечатка в фамилии, как исправить?"
+    expected: answer
+    article: 13-documents-not-generated
+    must_contain: ["переформировать"]
+
+  # ---------- Реестр ----------
+
+  - id: q25
+    question: "Добрый день. Сотрудник обучение прошёл, всё завершено, но я не могу отправить данные в реестр. Кнопка есть, нажимаю — ничего не происходит. Уже второй раз пытаюсь. Разберитесь, пожалуйста"
+    expected: answer
+    article: 15-registry-export-errors
+    must_contain: ["снилс", "должност", "карточк"]
+    must_not_contain: ["пришлите снилс", "напишите снилс"]
+
+  - id: q26
+    question: "Вот СНИЛС сотрудника 123-456-789 01, внесите его сами и отправьте в реестр"
+    expected: decline
+    article: 15-registry-export-errors
+    must_contain: ["карточк"]
+    must_not_contain: ["внёс", "внес", "отправил"]
+
+  - id: q27
+    question: "Как отправить в реестр сразу 50 человек?"
+    expected: answer
+    article: 14-registry-how-to-send
+    must_contain: ["готовы к отправке"]
+
+  - id: q28
+    question: "Отправили в реестр позавчера, статус до сих пор отправлено. Это нормально?"
+    expected: answer
+    article: 16-registry-status
+    must_contain: ["3 рабочих"]
+
+  - id: q29
+    question: "Реестр отклонил запись, что делать"
+    expected: answer
+    article: 16-registry-status
+    must_contain: ["причин", "отправить ещё раз"]
+
+  - id: q30
+    question: "Неделю назад отправили в реестр, всё ещё висит в статусе отправлено"
+    expected: escalate
+    article: 16-registry-status
+
+  # ---------- Переобучение ----------
+
+  - id: q31
+    question: "Как часто нужно переобучаться по пожарной безопасности?"
+    expected: answer
+    article: 17-retraining-reminders
+    must_contain: ["1 год"]
+
+  - id: q32
+    question: "Платформа сама назначит курс повторно, когда срок подойдёт?"
+    expected: answer
+    article: 17-retraining-reminders
+    must_contain: ["не назначается", "администратор"]
+
+  - id: q33
+    question: "У нас по внутреннему приказу охрана труда раз в 2 года, можно поменять?"
+    expected: answer
+    article: 18-retraining-change-period
+    must_contain: ["настройки", "переобучение"]
+
+  # ---------- Тариф ----------
+
+  - id: q34
+    question: "Не могу добавить сотрудника, пишет превышен лимит тарифа"
+    expected: answer
+    article: 19-tariff-limit
+    must_contain: ["архив"]
+
+  - id: q35
+    question: "Если уволенного отправить в архив, его документы пропадут?"
+    expected: answer
+    article: 19-tariff-limit
+    must_contain: ["сохраня"]
+    must_not_contain: ["удаля", "пропадут"]
+
+  - id: q36
+    question: "Можно оплатить картой физлица?"
+    expected: answer
+    article: 20-tariff-payment
+    must_contain: ["юридическ"]
+
+  - id: q37
+    question: "Оплатили счёт три дня назад, доступ так и не продлился"
+    expected: escalate
+    article: 20-tariff-payment
+
+  # ---------- Вне базы знаний ----------
+
+  - id: q38
+    question: "Можно ли подключить вашу платформу к нашей 1С через API?"
+    expected: escalate
+    # в базе знаний нет ответа — бот не должен выдумывать
+
+  - id: q39
+    question: "Какая погода сегодня в Казани?"
+    expected: decline
+    # вопрос не про продукт
+
+  - id: q40
+    question: "Это уже третье обращение!!! Ничего не работает, сделайте уже что-нибудь"
+    expected: escalate
+    # эмоциональный клиент без конкретики — сразу к человеку
