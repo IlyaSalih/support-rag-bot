@@ -83,6 +83,21 @@ def split_into_chunks(path: Path) -> list[Chunk]:
                 heading=heading,
             )
         )
+
+    # Типичные формулировки клиентов из метаданных (поле questions) —
+    # отдельные фрагменты. Вопрос клиента похож по смыслу скорее на другой
+    # вопрос, чем на текст инструкции, поэтому так статья находится надёжнее.
+    for j, question in enumerate(meta.get("questions", [])):
+        chunks.append(
+            Chunk(
+                id=f"{article}#q{j}",
+                text=question,
+                article=article,
+                title=title,
+                section=section,
+                heading="Типичный вопрос",
+            )
+        )
     return chunks
 
 

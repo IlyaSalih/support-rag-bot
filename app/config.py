@@ -30,8 +30,10 @@ COLLECTION_NAME = "knowledge_base"
 SEARCH_TOP_K = 6
 MAX_ARTICLES = 2
 # Порог похожести: если лучший фрагмент ниже, считаем, что в базе ответа нет.
-# Для нашей модели: релевантное ~0.6–0.8, постороннее ~0.1–0.3
-MIN_SCORE = float(os.getenv("MIN_SCORE", "0.45"))
+# Зависит от модели эмбеддингов! Для paraphrase-multilingual-mpnet-base-v2:
+# релевантное ~0.42–0.85, явно постороннее ~0.2. Порог низкий сознательно:
+# лишнюю статью отсеет модель (правило 5а в answer.py), а пропущенную — никто.
+MIN_SCORE = float(os.getenv("MIN_SCORE", "0.40"))
 
 # --- Эмбеддинги (локально, fastembed) ---
 EMBEDDINGS_MODEL = os.getenv(

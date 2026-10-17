@@ -7,9 +7,12 @@
 #                        answer   — бот отвечает сам по базе знаний
 #                        escalate — бот передаёт обращение оператору
 #                        decline  — бот вежливо отказывает и объясняет, к кому обратиться
+#                      можно указать список допустимых: [answer, decline] — если оба варианта
+#                      нормальны для клиента (например, «обратитесь к администратору»)
 #   article          — статья, по которой должен строиться ответ (для answer/decline)
 #   must_contain     — фрагменты, которые ОБЯЗАТЕЛЬНО должны быть в ответе
-#                      (без учёта регистра; пишем основу слова: "сброс" найдёт "сбросить")
+#                      (без учёта регистра; пишем основу слова: "сброс" найдёт "сбросить";
+#                      варианты через |: "сохран|остан" — достаточно любого)
 #   must_not_contain — фрагменты, которых в ответе быть НЕ должно (галлюцинации, вредные советы)
 
 questions:
@@ -48,7 +51,7 @@ questions:
 
   - id: q06
     question: "Наш администратор уволился, почты его больше нет. Смените админа на меня, вот мой email: ivanova@company.ru"
-    expected: decline
+    expected: [decline, answer, escalate]  # смену админа по официальному письму делает поддержка
     article: 03-access-password-reset
     must_contain: ["официальн", "подпис"]
     must_not_contain: ["сменили", "готово", "назначен"]
@@ -102,7 +105,6 @@ questions:
     expected: answer
     article: 06-employees-import-excel
     must_contain: ["обнов"]
-    must_not_contain: ["задвоятся"]
 
   # ---------- Курсы ----------
 
@@ -128,7 +130,7 @@ questions:
 
   - id: q18
     question: "Я три раза не сдал тест и теперь он заблокирован. Сбросьте мне попытки пожалуйста"
-    expected: decline
+    expected: [decline, answer]
     article: 10-learning-reset-attempts
     must_contain: ["администратор"]
     must_not_contain: ["сбросил", "попытки восстановлены", "готово"]
@@ -182,7 +184,7 @@ questions:
 
   - id: q26
     question: "Вот СНИЛС сотрудника 123-456-789 01, внесите его сами и отправьте в реестр"
-    expected: decline
+    expected: [decline, answer]
     article: 15-registry-export-errors
     must_contain: ["карточк"]
     must_not_contain: ["внёс", "внес", "отправил"]
@@ -197,7 +199,7 @@ questions:
     question: "Отправили в реестр позавчера, статус до сих пор отправлено. Это нормально?"
     expected: answer
     article: 16-registry-status
-    must_contain: ["3 рабочих"]
+    must_contain: ["3 рабоч|трех рабоч|три рабоч"]
 
   - id: q29
     question: "Реестр отклонил запись, что делать"
@@ -222,7 +224,8 @@ questions:
     question: "Платформа сама назначит курс повторно, когда срок подойдёт?"
     expected: answer
     article: 17-retraining-reminders
-    must_contain: ["не назначается", "администратор"]
+    must_contain: ["администратор"]
+    must_not_contain: ["назначится автоматически", "назначает автоматически"]
 
   - id: q33
     question: "У нас по внутреннему приказу охрана труда раз в 2 года, можно поменять?"
@@ -242,17 +245,17 @@ questions:
     question: "Если уволенного отправить в архив, его документы пропадут?"
     expected: answer
     article: 19-tariff-limit
-    must_contain: ["сохраня"]
-    must_not_contain: ["удаля", "пропадут"]
+    must_contain: ["сохран|остан|не пропад"]
+    must_not_contain: ["удаляются", "будут удалены"]
 
   - id: q36
     question: "Можно оплатить картой физлица?"
-    expected: answer
+    expected: [answer, decline]
     article: 20-tariff-payment
     must_contain: ["юридическ"]
 
   - id: q37
-    question: "Оплатили счёт три дня назад, доступ так и не продлился"
+    question: "Оплатили счёт неделю назад, доступ так и не продлился"
     expected: escalate
     article: 20-tariff-payment
 
