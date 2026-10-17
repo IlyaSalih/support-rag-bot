@@ -1,0 +1,120 @@
+# ОТЛОЖЕННЫЙ тестовый набор — честная оценка качества.
+#
+# Правило: по этим вопросам НЕЛЬЗЯ подстраивать базу знаний, промпт и настройки.
+# Их прогоняют, чтобы узнать реальное качество на вопросах, которых система
+# не видела при настройке. Если по результатам что-то чинится — вопрос,
+# под который чинили, переносится в questions.yaml, а сюда пишутся новые.
+#
+# Формат полей — как в questions.yaml.
+
+questions:
+
+  - id: h01
+    question: "Какие браузеры у вас поддерживаются?"
+    expected: answer
+    article: 01-access-login
+    must_contain: ["chrome|хром"]
+
+  - id: h02
+    question: "Через сколько примерно должно прийти письмо сотруднику после назначения?"
+    expected: answer
+    article: 02-access-email-not-received
+    must_contain: ["5 минут|пяти минут"]
+
+  - id: h03
+    question: "сколько действует ссылка для смены пароля админа"
+    expected: answer
+    article: 03-access-password-reset
+    must_contain: ["час"]
+
+  - id: h04
+    question: "Сколько всего админов может быть в одной компании?"
+    expected: answer
+    article: 04-access-roles
+    must_contain: ["5|пять"]
+
+  - id: h05
+    question: "В каком виде вбивать СНИЛС, с дефисами или без?"
+    expected: answer
+    article: 05-employees-add
+    must_contain: ["11"]
+
+  - id: h06
+    question: "Импорт ругается на email у нескольких людей, хотя адреса вроде правильные"
+    expected: answer
+    article: 07-employees-import-errors
+    must_contain: ["пробел|русск"]
+
+  - id: h07
+    question: "Новичка перевели в отдел уже после того, как отделу назначили охрану труда. Курс у него появится сам?"
+    expected: answer
+    article: 08-courses-assign
+    must_contain: ["отдельно|вручную|назначить"]
+    must_not_contain: ["появится автоматически", "появится сам"]
+
+  - id: h08
+    question: "Если админ сбросит попытки, мне придётся заново проходить все материалы курса?"
+    expected: answer
+    article: 10-learning-reset-attempts
+    must_contain: ["не нужно|не придется|не требуется|не надо|не обязательно"]
+
+  - id: h09
+    question: "Сотрудник случайно закрыл вкладку посреди теста. Попытка сгорела?"
+    expected: answer
+    article: 11-learning-test-not-counted
+    must_contain: ["не сгор|не засчит|не теря|сохран"]
+
+  - id: h10
+    question: "Удостоверения нужно как-то заверять или они уже готовые?"
+    expected: answer
+    article: 12-documents-where
+    must_contain: ["печат"]
+
+  - id: h11
+    question: "Можете ускорить проверку в реестре? Очень срочно надо"
+    expected: answer
+    article: 16-registry-status
+    must_contain: ["нельзя|невозможно|не можем|не может|зависит"]
+    must_not_contain: ["ускорили", "ускорим"]
+
+  - id: h12
+    question: "Кому и за сколько приходят письма, что пора переобучаться?"
+    expected: answer
+    article: 17-retraining-reminders
+    must_contain: ["30"]
+
+  - id: h13
+    question: "Что будет с нашими документами, если мы не продлим подписку?"
+    expected: answer
+    article: 20-tariff-payment
+    must_contain: ["12 месяц|двенадцать месяц|год"]
+
+  # ---------- Нет в базе знаний: бот не должен выдумывать ----------
+
+  - id: h14
+    question: "Сколько стоит тариф Бизнес в месяц?"
+    expected: escalate
+    must_not_contain: ["руб", "₽"]
+
+  - id: h15
+    question: "Можно ли загрузить на платформу свой курс по промышленной безопасности?"
+    expected: escalate
+    must_not_contain: ["можно загрузить", "нельзя загрузить"]
+
+  - id: h16
+    question: "Восстановил пароль по ссылке, поставил новый, а всё равно пишет неверный email или пароль"
+    expected: escalate
+    article: 01-access-login
+
+  # ---------- Не по теме или нельзя выполнить ----------
+
+  - id: h17
+    question: "Посоветуйте хороший онлайн-курс по Python"
+    expected: decline
+
+  - id: h18
+    question: "Я набрал 76%, поставьте мне зачёт, там совсем чуть-чуть не хватило"
+    expected: [decline, answer]
+    article: 11-learning-test-not-counted
+    must_contain: ["80"]
+    must_not_contain: ["поставил", "засчитал", "зачёт поставлен"]

@@ -4,6 +4,7 @@
     python -m eval.run_eval                 # все вопросы
     python -m eval.run_eval --only q18,q25  # выборочно
     python -m eval.run_eval --delay 2       # пауза между запросами, сек
+    python -m eval.run_eval --file holdout.yaml  # отложенный набор
 
 Что проверяется для каждого вопроса:
   * решение бота (answer / escalate / decline) входит в допустимые;
@@ -62,8 +63,8 @@ def check(q: dict, action: str, text: str, articles: list[str]) -> list[str]:
     return problems
 
 
-def run(only: set[str] | None, delay: float) -> None:
-    questions = yaml.safe_load(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
+def run(only: set[str] | None, delay: float, questions_file: Path = QUESTIONS_FILE) -> None:
+    questions = yaml.safe_load(questions_file.read_text(encoding="utf-8"))["questions"]
     if only:
         questions = [q for q in questions if q["id"] in only]
 
@@ -72,9 +73,11 @@ def run(only: set[str] | None, delay: float) -> None:
         try:
             res = answer(q["question"])
             action, text, articles, score = res.action, res.text, res.articles, res.top_score
+            guard, raw = res.guard, res.raw
             problems = check(q, action, text, articles)
         except Exception as exc:  # ошибка API не должна ронять весь прогон
             action, text, articles, score = "error", str(exc), [], 0.0
+            guard, raw = "", ""
             problems = [f"ошибка: {exc}"]
 
         expected_article = q.get("article")
@@ -88,6 +91,8 @@ def run(only: set[str] | None, delay: float) -> None:
         print(f"[{i:02}/{len(questions)}] {status} {q['id']}  {action:<8}  {q['question'][:55]}")
         for p in problems:
             print(f"        - {p}")
+        if guard:
+            print(f"        ! защита от выдумок: {guard}")
         if retrieval_hit is False and action != "error":
             print(f"        ~ поиск не нашёл статью {expected_article}, нашёл {articles}")
 
@@ -103,14 +108,16 @@ def run(only: set[str] | None, delay: float) -> None:
             "retrieval_hit": retrieval_hit,
             "top_score": score,
             "answer": text,
+            "guard": guard,
+            "raw": raw,
         })
         if delay and i < len(questions):
             time.sleep(delay)
 
-    summarize(results)
+    summarize(results, prefix=questions_file.stem)
 
 
-def summarize(results: list[dict]) -> None:
+def summarize(results: list[dict], prefix: str = "questions") -> None:
     total = len(results)
     passed = sum(r["passed"] for r in results)
 
@@ -131,12 +138,15 @@ def summarize(results: list[dict]) -> None:
             print(f"  {kind:<9} {ok_by_type[kind]}/{by_type[kind]}")
     if with_article:
         print(f"Поиск нашёл нужную статью: {hits}/{len(with_article)} ({hits / len(with_article):.0%})")
+    guarded = sum(bool(r["guard"]) for r in results)
+    if guarded:
+        print(f"Защита от выдумок заменила ответ эскалацией: {guarded}")
     errors = sum(r["action"] == "error" for r in results)
     if errors:
         print(f"Ошибок API: {errors}")
 
     RESULTS_DIR.mkdir(exist_ok=True)
-    path = RESULTS_DIR / f"eval_{datetime.now():%Y%m%d_%H%M%S}.json"
+    path = RESULTS_DIR / f"eval_{prefix}_{datetime.now():%Y%m%d_%H%M%S}.json"
     path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Подробный отчёт: {path}")
 
@@ -145,9 +155,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Прогон тестового набора")
     parser.add_argument("--only", help="id вопросов через запятую, например q18,q25")
     parser.add_argument("--delay", type=float, default=1.0, help="пауза между запросами, сек")
+    parser.add_argument("--file", default="questions.yaml",
+                        help="набор вопросов в папке eval/, например holdout.yaml")
     args = parser.parse_args()
     only = set(args.only.split(",")) if args.only else None
-    run(only, args.delay)
+    run(only, args.delay, EVAL_DIR / args.file)
 
 
 if __name__ == "__main__":

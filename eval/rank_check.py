@@ -3,6 +3,7 @@
 Запуск из корня проекта:
     python -m eval.rank_check                # все вопросы с указанной статьёй
     python -m eval.rank_check --only q01,q10 # выборочно
+    python -m eval.rank_check --file holdout.yaml
 
 Не вызывает GigaChat — только локальный поиск, поэтому быстро и бесплатно.
 Показывает, помогло бы увеличение MAX_ARTICLES или поиск надо менять.
@@ -15,7 +16,7 @@ import yaml
 
 from app import config
 from app.retriever import search
-from eval.run_eval import QUESTIONS_FILE
+from eval.run_eval import EVAL_DIR
 
 
 def article_ranks(question: str, top_k: int = 30) -> list[tuple[str, float]]:
@@ -31,10 +32,11 @@ def article_ranks(question: str, top_k: int = 30) -> list[tuple[str, float]]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", help="id вопросов через запятую")
+    parser.add_argument("--file", default="questions.yaml", help="набор вопросов в eval/")
     args = parser.parse_args()
     only = set(args.only.split(",")) if args.only else None
 
-    questions = yaml.safe_load(QUESTIONS_FILE.read_text(encoding="utf-8"))["questions"]
+    questions = yaml.safe_load((EVAL_DIR / args.file).read_text(encoding="utf-8"))["questions"]
     stats = Counter()
     for q in questions:
         expected = q.get("article")

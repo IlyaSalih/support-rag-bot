@@ -9,6 +9,7 @@ import sys
 from dataclasses import dataclass, field
 
 from app import config
+from app.grounding import check as grounding_check
 from app.ingest import parse_article
 from app.llm import complete
 from app.retriever import best_semantic_score, search
@@ -78,6 +79,8 @@ class BotAnswer:
     action: str                   # answer / escalate / decline
     articles: list[str] = field(default_factory=list)  # на какие статьи опирался
     top_score: float = 0.0        # похожесть лучшего найденного фрагмента
+    guard: str = ""               # почему ответ заменён эскалацией (пусто — не заменён)
+    raw: str = ""                 # исходный ответ модели целиком (для разбора в отчётах)
 
 
 def _pick_articles(question: str) -> tuple[list[str], float]:
@@ -119,20 +122,32 @@ def _parse(raw: str) -> tuple[str, str]:
 def answer(question: str) -> BotAnswer:
     articles, top_score = _pick_articles(question)
 
+    articles_text = _articles_text(articles) if articles else ""
     if articles:
-        context = "Статьи базы знаний:\n\n" + _articles_text(articles)
+        context = "Статьи базы знаний:\n\n" + articles_text
     else:
         context = NO_CONTEXT_NOTE
 
     raw = complete(SYSTEM_PROMPT, f"{context}\n\nВопрос клиента:\n{question}")
     action, text = _parse(raw)
 
+    # Защита от выдумок: ответ и отказ по теме продукта проверяются по статьям.
+    # Отказы на посторонние вопросы (погода) статей не имеют и не проверяются
+    guard = ""
+    if action in (ANSWER, DECLINE) and articles:
+        guard = grounding_check(text, articles_text, question)
+    if guard:
+        action, text = ESCALATE, ""
+
     if action == ESCALATE:
         # Своими словами модель может пообещать лишнее — даём стандартный текст,
         # а её пояснение (если есть) ставим перед ним
         text = f"{text}\n\n{ESCALATION_TEXT}" if text else ESCALATION_TEXT
 
-    return BotAnswer(text=text, action=action, articles=articles, top_score=top_score)
+    return BotAnswer(
+        text=text, action=action, articles=articles,
+        top_score=top_score, guard=guard, raw=raw,
+    )
 
 
 if __name__ == "__main__":
@@ -140,5 +155,7 @@ if __name__ == "__main__":
     result = answer(question)
     print(f"Вопрос: {question}")
     print(f"Решение: {result.action}  |  статьи: {result.articles}  |  лучший score: {result.top_score}")
+    if result.guard:
+        print(f"Защита сработала: {result.guard}")
     print("-" * 60)
     print(result.text)
