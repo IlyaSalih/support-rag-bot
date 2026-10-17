@@ -1,0 +1,22 @@
+services:
+  bot:
+    build: .
+    image: support-rag-bot
+    container_name: support-rag-bot
+    # Секреты и настройки — из .env на хосте, в образ они не попадают
+    env_file: .env
+    environment:
+      # Внутри контейнера путь к сертификатам свой, перекрываем значение из .env
+      GIGACHAT_CA_BUNDLE_FILE: /etc/ssl/certs/ca-certificates.crt
+    volumes:
+      # Модель эмбеддингов (~1 ГБ) и индекс переживают пересоздание контейнера
+      - ./data:/app/data
+      # Журнал диалогов остаётся на хосте для разбора
+      - ./logs:/app/logs
+    restart: unless-stopped
+    # Бот не принимает входящих соединений (long polling) — порты не нужны
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

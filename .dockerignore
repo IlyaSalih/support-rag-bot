@@ -1,0 +1,13 @@
+# Не отправлять в контекст сборки: секреты, окружение, данные, мусор
+.env
+.venv/
+.git/
+data/
+logs/
+eval/
+tests/
+**/__pycache__/
+.pytest_cache/
+*.zip
+.vscode/
+.idea/

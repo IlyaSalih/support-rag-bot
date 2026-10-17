@@ -20,9 +20,16 @@ def _model() -> TextEmbedding:
     )
 
 
+# Сколько фрагментов считать за один проход. По умолчанию fastembed берёт 256 —
+# для модели ~1 ГБ это несколько ГБ памяти разом, и в контейнере процесс
+# убивал OOM killer (exit 137). Небольшие пачки почти не медленнее, а пик памяти
+# в разы ниже
+BATCH_SIZE = 16
+
+
 def embed_texts(texts: list[str]) -> list[list[float]]:
     """Эмбеддинги для списка текстов (фрагментов базы знаний)."""
-    return [vector.tolist() for vector in _model().embed(texts)]
+    return [vector.tolist() for vector in _model().embed(texts, batch_size=BATCH_SIZE)]
 
 
 def embed_query(text: str) -> list[float]:
