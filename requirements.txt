@@ -1,6 +1,8 @@
 gigachat
 chromadb
 fastembed
+numpy
+py-rust-stemmers
 aiogram
 python-dotenv
 pyyaml

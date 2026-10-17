@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from app import config
 from app.ingest import parse_article
 from app.llm import complete
-from app.retriever import search
+from app.retriever import best_semantic_score, search
 
 # Возможные решения бота
 ANSWER = "answer"      # ответил сам по базе знаний
@@ -81,13 +81,17 @@ class BotAnswer:
 
 
 def _pick_articles(question: str) -> tuple[list[str], float]:
-    """Ищет фрагменты и возвращает до MAX_ARTICLES разных статей, от лучшей к худшей."""
-    found = search(question, top_k=config.SEARCH_TOP_K)
-    top_score = found[0].score if found else 0.0
+    """Ищет фрагменты и возвращает до MAX_ARTICLES разных статей, от лучшей к худшей.
+
+    Если вопрос по смыслу ни на что в базе не похож (погода, посторонние темы),
+    статьи не отдаются вовсе — модель сама решит: отказ или эскалация.
+    """
+    top_score = best_semantic_score(question)
+    if top_score < config.MIN_SCORE:
+        return [], top_score
+
     articles = []
-    for item in found:
-        if item.score < config.MIN_SCORE:
-            break
+    for item in search(question, top_k=config.SEARCH_TOP_K):
         if item.article not in articles:
             articles.append(item.article)
         if len(articles) == config.MAX_ARTICLES:
