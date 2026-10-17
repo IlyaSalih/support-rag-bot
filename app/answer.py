@@ -72,6 +72,14 @@ NO_CONTEXT_NOTE = (
 
 _LABELS = {"[ANSWER]": ANSWER, "[ESCALATE]": ESCALATE, "[DECLINE]": DECLINE}
 
+NOT_HELPED_HINT = "Если это не поможет, нажмите «👎 Не помогло» — я передам вопрос специалисту."
+
+# «Напишите в поддержку», «напишите нам», «обратитесь в поддержку» и т. п.
+_SEND_TO_SUPPORT = re.compile(
+    r"(напиш\w*|обрат\w*|свяж\w*)\s+(\w+\s+){0,2}(в\s+)?(поддержк\w*|нам|с\s+нами)",
+    re.IGNORECASE,
+)
+
 
 @dataclass
 class BotAnswer:
@@ -119,6 +127,24 @@ def _parse(raw: str) -> tuple[str, str]:
     return _LABELS[match.group(1)], match.group(2).strip()
 
 
+def replace_send_to_support(text: str) -> str:
+    """Убирает из ответа предложения «напишите нам / в поддержку».
+
+    Модель берёт их из разделов «Когда писать в поддержку», но клиент уже
+    в поддержке, а передача специалисту в боте — кнопка «Не помогло».
+    Поэтому такие предложения заменяются одной подсказкой про кнопку.
+    """
+    if not _SEND_TO_SUPPORT.search(text):
+        return text
+    kept = []
+    for line in text.split("\n"):
+        sentences = re.split(r"(?<=[.!?])\s+", line)
+        line = " ".join(s for s in sentences if not _SEND_TO_SUPPORT.search(s))
+        kept.append(line.rstrip())
+    result = re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
+    return f"{result}\n\n{NOT_HELPED_HINT}" if result else NOT_HELPED_HINT
+
+
 def answer(question: str) -> BotAnswer:
     articles, top_score = _pick_articles(question)
 
@@ -138,10 +164,16 @@ def answer(question: str) -> BotAnswer:
         guard = grounding_check(text, articles_text, question)
     if guard:
         action, text = ESCALATE, ""
+    if action == ANSWER:
+        text = replace_send_to_support(text)
 
     if action == ESCALATE:
         # Своими словами модель может пообещать лишнее — даём стандартный текст,
-        # а её пояснение (если есть) ставим перед ним
+        # а её пояснение (если есть) ставим перед ним. Но если модель отправляет
+        # клиента «писать в поддержку» — убираем: он уже в поддержке, и рядом
+        # с «передаю специалисту» это звучит как противоречие
+        if _SEND_TO_SUPPORT.search(text):
+            text = ""
         text = f"{text}\n\n{ESCALATION_TEXT}" if text else ESCALATION_TEXT
 
     return BotAnswer(

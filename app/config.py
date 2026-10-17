@@ -50,6 +50,17 @@ GIGACHAT_CA_BUNDLE_FILE = os.getenv(
 )
 
 
+# --- Telegram ---
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+# Чат операторов, куда бот пересылает эскалации. Пусто — эскалации только в журнал.
+# Узнать id чата: добавить бота в группу и написать там /chatid
+OPERATORS_CHAT_ID = os.getenv("OPERATORS_CHAT_ID", "")
+
+# --- Журнал диалогов ---
+LOGS_DIR = BASE_DIR / "logs"
+DIALOG_LOG = LOGS_DIR / "dialogs.jsonl"
+
+
 def require(name: str, value: str) -> str:
     """Проверяет, что обязательная настройка заполнена, иначе понятная ошибка."""
     if not value:
